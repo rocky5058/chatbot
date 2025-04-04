@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gemini Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #chatbox { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .user { color: #1a73e8; margin: 5px 0; }
+        .bot { color: #0d652d; margin: 5px 0; }
+        #message { width: 70%; padding: 8px; }
+        button { padding: 8px 15px; background: #1a73e8; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h1>Gemini Chatbot</h1>
+    <div id="chatbox">
+        <p class="bot">{{ response }}</p>
+    </div>
+    <input type="text" id="message" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+    
+    <!-- Hidden field to store chat history -->
+    <input type="hidden" id="chatHistory" value="{{ chat_history }}">
+
+    <!-- Previous HTML remains the same until the script section -->
+<script>
+    function sendMessage() {
+    const message = document.getElementById('message').value;
+    const chatbox = document.getElementById('chatbox');
+    const history = document.getElementById('chatHistory').value;
+    
+    if (!message) return;
+    
+    chatbox.innerHTML += `<p class="user">You: ${message}</p>`;
+    document.getElementById('message').value = '';
+    chatbox.scrollTop = chatbox.scrollHeight;
+    
+    fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: message,
+            history: history
+        })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network error');
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) throw new Error(data.error);
+        chatbox.innerHTML += `<p class="bot">Bot: ${data.response}</p>`;
+        document.getElementById('chatHistory').value = JSON.stringify(data.history);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        chatbox.innerHTML += `<p class="error">Error: ${error.message}</p>`;
+    });
+}
+    document.getElementById('message').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+</script>
+</body>
+</html>
